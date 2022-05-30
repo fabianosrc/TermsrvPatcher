@@ -24,7 +24,7 @@ Go to the folder your script is in
 > PowerShell Cmdlet
 
 ```powershell
-Set-Location -Path C:\Users\Fabiano\Downloads
+Set-Location -Path C:\Users\YourUserName\Downloads
 ```
 
 > CMD
