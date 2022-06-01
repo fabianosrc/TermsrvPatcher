@@ -1,19 +1,52 @@
-﻿#Requires -Version 5.1
+﻿Set-StrictMode -Version Latest
+
+<#PSScriptInfo
+
+.VERSION 1.0
+
+.GUID 41543292-9400-41d5-8bb8-5fe43f167a03
+
+.AUTHOR Fabiano Silva
+
+.COPYRIGHT Copyright (c) Fabiano Silva
+
+.TAGS Windows PowerShell Multiple RDP
+
+.PROJECTURI https://github.com/fabianomsrc/TermsrvPatcher
+
+#>
 
 <#
 .SYNOPSIS
-    Patch termsrv.dll so that multiple remote users can open an RDP session on a non-Windows Server computer.
+    Patch termsrv.dll so that multiple remote users can open an RDP session on a non-Windows Server computer
 .DESCRIPTION
-    This script patches the termsrv.dll file, changing a binary string to allow multiple simultaneous sessions
-    via Remote Desktop Connection (RDP) on non-Windows Server computers.
+    This script patches the termsrv.dll file to allow multiple simultaneous sessions via
+    Remote Desktop Connection (RDP) on non-Windows Server computers
 .LINK
     http://woshub.com/how-to-allow-multiple-rdp-sessions-in-windows-10
     https://www.mysysadmintips.com/windows/clients/545-multiple-rdp-remote-desktop-sessions-in-windows-10
 #>
 
-$termsrvDll = 'C:\Windows\System32\termsrv.dll'
-$termsrvCopy = 'C:\Windows\System32\termsrv.dll.copy'
-$termsrvPatched = 'C:\Windows\System32\termsrv.dll.patched'
+# Self-elevate the script so with a UAC prompt since this script needs to be run as an Administrator in order to function properly
+if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
+    switch ((Get-Culture).Name) {
+        'pt-BR' { Write-Host 'Você não executou este script como Administrador. Este script será executado automaticamente como Administrador e continuará.'; Start-Sleep -Seconds 2 }
+        'en-US' { Write-Host 'You didn''t run this script as an Administrator. This script will self elevate to run as an Administrator and continue.'; Start-Sleep -Seconds 2 }
+        Default { Write-Host 'You didn''t run this script as an Administrator. This script will self elevate to run as an Administrator and continue.'; Start-Sleep -Seconds 2 }
+    }
+    Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
+    Exit
+}
+
+$windowsVersion = [System.Environment]::OSVersion.Version
+$OSArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+
+function Get-FullOSBuildNumber {
+    $currentBuild = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentBuild).CurrentBuild
+    $updateBuildVersion = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
+
+    return $currentBuild, $updateBuildVersion -join '.'
+}
 
 # Remote Desktop Services
 $termServiceStatus = (Get-Service -Name TermService).Status
@@ -22,6 +55,7 @@ $termServiceStatus = (Get-Service -Name TermService).Status
 $umRdpServiceStatus = (Get-Service -Name UmRdpService).Status
 
 Write-Output "Status of service UmRdpService: $umRdpServiceStatus"
+
 Write-Output "Status of service TermService: $termServiceStatus"
 
 if ($termServiceStatus -eq 'Running') {
@@ -32,42 +66,60 @@ if ($umRdpServiceStatus -eq 'Running') {
     Stop-Service UmRdpService -Force
 }
 
+$termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
+$termsrvPatched = "$env:SystemRoot\System32\tersrv.dll.patched"
+
 # Save Access Control List (ACL) of termsrv.dll file.
-$termsrvDllAcl = Get-Acl -Path $termsrvDll
+$termsrvDllAcl = Get-Acl -Path $termsrvDllFile
 
 Write-Host "Owner of termsrv.dll: $($termsrvDllAcl.Owner)"
 
 # Create a backup of the original termsrv.dll file.
-Copy-Item -Path $termsrvDll -Destination $termsrvCopy
+Copy-Item -Path $termsrvDllFile -Destination "$env:SystemRoot\System32\termsrv.dll.copy"
 
 # Take ownership of the DLL...
-takeown.exe /F $termsrvDll
+takeown.exe /F $termsrvDllFile
 
 # Get Current User logged in
 $currentUserName = (Get-WmiObject -Class Win32_ComputerSystem).UserName
 
 # Grant full control to the currently logged in user.
-icacls.exe $termsrvDll /grant "$($currentUserName):F"
+icacls.exe $termsrvDllFile /grant "$($currentUserName):F"
 
-# Read DLL as byte array in order to modify the bytes.
-$dllAsBytes = Get-Content -Path $termsrvDll -Encoding Byte -Raw
+# Read termsrv.dll as byte array to modify bytes
+$dllAsByte = Get-Content -Path $termsrvDllFile -Raw -Encoding Byte
 
-# Convert the byte array to a string that represents each byte value as a hexadecimal value, separated by spaces.
-$dllAsText = $dllAsBytes.ForEach('ToString', 'X2') -join ' '
+# Convert the byte array to a string that represents each byte value as a hexadecimal value, separated by spaces
+$dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
 
-function Get-FullWindowsBuildNumber {
-    $currentBuild = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentBuild).CurrentBuild
+# OS is Windows 7
+if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
+    if ($OSArchitecture -eq '32-bit') {
 
-    $updateBuildVersion = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
-
-    return $("$currentBuild.$updateBuildVersion")
+    }
+    else {
+        switch ($(Get-FullOSBuildNumber)) {
+            '7601.23964' {
+                $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
+                -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+            }
+            Default {}
+        }
+    }
 }
 
-# Search for byte array (which depends on Windows edition) and replace them.
-switch ($(Get-FullWindowsBuildNumber)) {
-    '19044.1706' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 2B 86 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-    '7601.23964' { $dllAsTextReplaced = $dllAsText -replace '3B 86 20 03 00 00 0F 84 03 15 01 00 57 6A 20 E8', 'B8 00 01 00 00 90 89 86 20 03 00 00 57 6A 20 E8' }
-    Default { Write-Host 'Xii, deu ruim'}
+# OS is Windows 10
+if ($windowsVersion.Major -eq '10') {
+    if ($OSArchitecture -eq '32-bit') {
+
+    }
+    else {
+        switch ($(Get-FullOSBuildNumber)) {
+            '19044.1706' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 2B 86 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
+            Default {}
+        }
+    }
 }
 
 # Use the replaced string to create a byte array again.
@@ -76,38 +128,17 @@ switch ($(Get-FullWindowsBuildNumber)) {
 # Create termsrv.dll.patched from the byte array.
 Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
 
-<#
-.SYNOPSIS
-    Compares the original termsrv.dll file and the patched file.
-.DESCRIPTION
-    Compares two files or sets of files and displays the differences between them.
-.EXAMPLE
-    PS C:\> fc.exe C:\Windows\System32\termsrv.dll C:\Windows\System32\termsrv.dll.patched
-
-    00017BB5: 39 B8
-    00017BB6: 81 00
-    00017BB7: 3C 01
-    00017BB8: 06 00
-    00017BBA: 00 89
-    00017BBB: 0F 81
-    00017BBC: 84 38
-    00017BBD: 2B 06
-    00017BBE: 86 00
-    00017BBF: 01 00
-    00017BC0: 00 90
-#>
-fc.exe /B $termsrvDll $termsrvPatched
+# Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
+fc.exe /B $termsrvDllFile $termsrvPatched
 
 # Overwrite original DLL with patched version:
-Copy-Item -Path $termsrvPatched -Destination $termsrvDll
+Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile
 
 # Restore original Access Control List (ACL):
-Set-Acl -Path $termsrvDll -AclObject $termsrvDllAcl
+Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
 
-if ($termServiceStatus -eq 'Stopped') {
-    Start-Service TermService -Force
-}
+Start-Sleep -Seconds 4
 
-if ($umRdpServiceStatus -eq 'Stopped') {
-    Start-Service UmRdpService -Force
-}
+# Start services again...
+Start-Service TermService
+Start-Service UmRdpService
