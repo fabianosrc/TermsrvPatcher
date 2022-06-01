@@ -55,7 +55,6 @@ $termServiceStatus = (Get-Service -Name TermService).Status
 $umRdpServiceStatus = (Get-Service -Name UmRdpService).Status
 
 Write-Output "Status of service UmRdpService: $umRdpServiceStatus"
-
 Write-Output "Status of service TermService: $termServiceStatus"
 
 if ($termServiceStatus -eq 'Running') {
