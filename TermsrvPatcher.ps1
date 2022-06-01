@@ -43,9 +43,9 @@ $OSArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
 
 function Get-FullOSBuildNumber {
     $currentBuild = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentBuild).CurrentBuild
-    $updateBuildVersion = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
+    $updateBuildRevision = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
 
-    return $currentBuild, $updateBuildVersion -join '.'
+    return $currentBuild, $updateBuildRevision -join '.'
 }
 
 # Remote Desktop Services
