@@ -18,7 +18,11 @@ Requires PowerShell 5.1 or higher
 [Download and install Windows PowerShell 5.1](https://docs.microsoft.com/en-us/skypeforbusiness/set-up-your-computer-for-windows-powershell/download-and-install-windows-powershell-5-1)
 
 # How to use
-Download TermsrvPatcher.ps1 file and place it in any folder e.g. 'C:\Users\YourUserName\Downloads'
+Download TermsrvPatcher.ps1 file and place it in any folder e.g.
+
+```txt
+C:\Users\YourUserName\Downloads
+```
 
 Go to the folder your script is in
 
@@ -27,12 +31,12 @@ Go to the folder your script is in
 ```powershell
 Set-Location -Path C:\Users\YourUserName\Downloads
 ```
-> CMD
+> CMD syntax
 
 ```cmd
 cd c:\Users\YourUserName\Downloads
 ```
-Run the script
+> Run the script
 ```powershell
 .\TermsrvPatcher.ps1
 ```
