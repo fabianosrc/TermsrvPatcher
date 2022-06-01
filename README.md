@@ -1,4 +1,7 @@
 # TermsrvPatcher
+![Environment](https://img.shields.io/badge/Windows-7,%2010-brightgreen.svg)
+![license](https://img.shields.io/github/license/fabianomsrc/TermsrvPatcher)
+
 Patch termsrv.dll so that multiple remote users can open an RDP session on a non-Windows Server computer
 
 ## Credits
@@ -17,8 +20,6 @@ Requires PowerShell 5.1 or higher
 # How to use
 Download TermsrvPatcher.ps1 file and place it in any folder e.g. 'C:\Users\YourUserName\Downloads'
 
-Run PowerShell as Administrator
-
 Go to the folder your script is in
 
 > PowerShell Cmdlet
@@ -26,25 +27,16 @@ Go to the folder your script is in
 ```powershell
 Set-Location -Path C:\Users\YourUserName\Downloads
 ```
-
 > CMD
 
 ```cmd
 cd c:\Users\YourUserName\Downloads
-```
-
-Before running the script, need to change PowerShell script execution policy
-
-```powershell
-Set-ExecutionPolicy Unrestricted
 ```
 Run the script
 ```powershell
 .\TermsrvPatcher.ps1
 ```
 
-If you don't want to change it right now, you can bypass it and use the command below
-
-```powershell
-powershell -ExecutionPolicy Bypass -NoProfile -NonInteractive -File C:\Users\YourUserName\Downloads\TermsrvPatcher.ps1
-```
+#### Supported Terminal Services versions:
+ - Windows 7 Pro SP1 build 7600.16385 64-bit
+ - Windows 10 Pro 21H2 build 19044.1706 64-bit
