@@ -1,6 +1,4 @@
-﻿Set-StrictMode -Version Latest
-
-<#PSScriptInfo
+﻿<#PSScriptInfo
 
 .VERSION 1.0
 
