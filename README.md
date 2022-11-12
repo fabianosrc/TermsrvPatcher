@@ -44,4 +44,4 @@ cd c:\Users\YourUserName\Downloads
 #### Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
  - Windows 10 Pro 21H1 64-bit
- - Windows 10 Pro 21H1 64-bit
+ - Windows 10 Pro 21H2 64-bit
