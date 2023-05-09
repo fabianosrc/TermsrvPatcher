@@ -118,6 +118,7 @@ if ($windowsVersion.Major -eq '10') {
             '19044.1706' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 2B 86 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
             '19045.2251' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 85 45 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
             '19045.2546' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 85 45 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
+            '19045.2913' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 25 48 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
             Default { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 85 45 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
         }
     }
