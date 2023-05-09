@@ -10,7 +10,7 @@
 
 .TAGS Windows PowerShell Multiple RDP
 
-.PROJECTURI https://github.com/fabianomsrc/TermsrvPatcher
+.PROJECTURI https://github.com/fabianosrc/TermsrvPatcher
 
 #>
 
