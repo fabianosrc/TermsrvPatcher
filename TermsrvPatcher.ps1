@@ -47,21 +47,24 @@ function Get-FullOSBuildNumber {
     return $currentBuild, $updateBuildRevision -join '.'
 }
 
-# Remote Desktop Services
-$termServiceStatus = (Get-Service -Name TermService).Status
+if ((Get-Service -Name TermService).Status -eq 'Running') {
+    switch ((Get-Culture).Name) {
+        'pt-BR' { Write-Host $("O serviço $((Get-Service -Name TermService).DisplayName) será encerrado agora.") -ForegroundColor Green }
+        Default { Write-Host $("The $((Get-Service -Name TermService).DisplayName) service is stopping now.") -ForegroundColor Green }
+    }
 
-# Remote Desktop Services UserMode Port Redirector
-$umRdpServiceStatus = (Get-Service -Name UmRdpService).Status
-
-Write-Output "Status of service UmRdpService: $umRdpServiceStatus"
-Write-Output "Status of service TermService: $termServiceStatus"
-
-if ($termServiceStatus -eq 'Running') {
-    Stop-Service TermService -Force
+    Start-Sleep -Milliseconds 2500
+    Stop-Service -Name TermService -Force
 }
 
-if ($umRdpServiceStatus -eq 'Running') {
-    Stop-Service UmRdpService -Force
+if ((Get-Service -Name UmRdpService).Status -eq 'Running') {
+    switch ((Get-Culture).Name) {
+        'pt-BR' { Write-Host $("O serviço $((Get-Service -Name UmRdpService).DisplayName) será encerrado agora.") -ForegroundColor Green }
+        Default { Write-Host $("The $((Get-Service -Name UmRdpService).DisplayName) service is stopping now.") -ForegroundColor Green }
+    }
+
+    Start-Sleep -Milliseconds 2500
+    Stop-Service -Name UmRdpService -Force
 }
 
 $termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
