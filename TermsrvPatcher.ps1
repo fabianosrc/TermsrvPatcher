@@ -28,13 +28,17 @@
 # Self-elevate the script so with a UAC prompt since this script needs to be run as an Administrator in order to function properly
 if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
     switch ((Get-Culture).Name) {
-        'pt-BR' { Write-Host 'Você não executou este script como Administrador. Este script será executado automaticamente como Administrador e continuará.'; Start-Sleep -Seconds 2 }
-        'en-US' { Write-Host 'You didn''t run this script as an Administrator. This script will self elevate to run as an Administrator and continue.'; Start-Sleep -Seconds 2 }
-        Default { Write-Host 'You didn''t run this script as an Administrator. This script will self elevate to run as an Administrator and continue.'; Start-Sleep -Seconds 2 }
+        'pt-BR' { Write-Host 'Você não executou este script como Administrador. Este script será executado automaticamente como Administrador.' -ForegroundColor Green }
+        Default { Write-Host 'You didn''t run this script as an Administrator. This script will self elevate to run as an Administrator and continue.' -ForegroundColor Green }
     }
+
+    Start-Sleep -Milliseconds 2500
     Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
     Exit
 }
+
+Pause
+Exit
 
 $windowsVersion = [System.Environment]::OSVersion.Version
 $OSArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
