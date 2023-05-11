@@ -40,6 +40,9 @@ if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 $windowsVersion = [System.Environment]::OSVersion.Version
 $OSArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
 
+$termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
+$termsrvPatched = "$env:SystemRoot\System32\termsrv.dll.patched"
+
 function Get-FullOSBuildNumber {
     $currentBuild = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentBuild).CurrentBuild
     $updateBuildRevision = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
@@ -66,9 +69,6 @@ if ((Get-Service -Name UmRdpService).Status -eq 'Running') {
     Start-Sleep -Milliseconds 2500
     Stop-Service -Name UmRdpService -Force
 }
-
-$termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
-$termsrvPatched = "$env:SystemRoot\System32\tersrv.dll.patched"
 
 # Save Access Control List (ACL) of termsrv.dll file.
 $termsrvDllAcl = Get-Acl -Path $termsrvDllFile
