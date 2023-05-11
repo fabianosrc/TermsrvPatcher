@@ -37,9 +37,6 @@ if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Exit
 }
 
-Pause
-Exit
-
 $windowsVersion = [System.Environment]::OSVersion.Version
 $OSArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
 
