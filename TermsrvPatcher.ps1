@@ -40,7 +40,7 @@ if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 $windowsVersion = [System.Environment]::OSVersion.Version
-$OSArchitecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+$OSArchitecture = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture
 
 $termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
 $termsrvPatched = "$env:SystemRoot\System32\termsrv.dll.patched"
