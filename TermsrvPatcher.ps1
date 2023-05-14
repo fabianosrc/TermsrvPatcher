@@ -1,4 +1,6 @@
-﻿<#PSScriptInfo
+﻿#Requires -Version 5.1
+
+<#PSScriptInfo
 
 .VERSION 1.0
 
