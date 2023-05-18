@@ -20,10 +20,6 @@ Requires PowerShell 5.1 or higher
 # How to use
 Download TermsrvPatcher.ps1 file and place it in any folder e.g.
 
-Right click on TermsrvPacther.ps1, 'Run with PowerShell' and enjoy :-)
-
-or
-
 ```txt
 C:\Users\YourUserName\Downloads
 ```
@@ -40,6 +36,11 @@ Set-Location -Path C:\Users\YourUserName\Downloads
 ```cmd
 cd c:\Users\YourUserName\Downloads
 ```
+
+Right click on TermsrvPacther.ps1, select 'Run with PowerShell' and enjoy :-)
+
+or
+
 > Run the script
 ```powershell
 .\TermsrvPatcher.ps1
@@ -47,5 +48,4 @@ cd c:\Users\YourUserName\Downloads
 
 #### Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
- - Windows 10 Pro 21H1 64-bit
- - Windows 10 Pro 21H2 64-bit
+ - Windows 10 and Windows 11
