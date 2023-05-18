@@ -197,17 +197,14 @@ if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
 
         # Start services again...
         Start-Service TermService -PassThru
-        break
     } else {
         # Restore original Access Control List (ACL):
         Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
 
         # Start services again...
         Start-Service TermService -PassThru
-        break
 
         Write-Host 'No strings match specific regex patterns: ' -NoNewline -ForegroundColor Yellow
         Write-Host ($patterns.Values -join ', ') -ForegroundColor Red
-        break
     }
 }
