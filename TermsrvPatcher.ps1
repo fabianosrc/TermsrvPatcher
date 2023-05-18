@@ -62,16 +62,6 @@ if ((Get-Service -Name TermService).Status -eq 'Running') {
     Stop-Service -Name TermService -Force
 }
 
-if ((Get-Service -Name UmRdpService).Status -eq 'Running') {
-    switch ((Get-Culture).Name) {
-        'pt-BR' { Write-Host $("O serviço $((Get-Service -Name UmRdpService).DisplayName) será encerrado agora.") -ForegroundColor Green }
-        Default { Write-Host $("The $((Get-Service -Name UmRdpService).DisplayName) service is stopping now.") -ForegroundColor Green }
-    }
-
-    Start-Sleep -Milliseconds 2500
-    Stop-Service -Name UmRdpService -Force
-}
-
 # Save Access Control List (ACL) of termsrv.dll file.
 $termsrvDllAcl = Get-Acl -Path $termsrvDllFile
 
@@ -110,43 +100,114 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
             Default {}
         }
     }
+
+    $dllAsTextReplaced = $dllAsText -replace $matching.Values, $replaces
+
+    # Use the replaced string to create a byte array again.
+    [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
+
+    # Create termsrv.dll.patched from the byte array.
+    Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
+
+    # Restore original Access Control List (ACL):
+    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+    fc.exe /B $termsrvPatched $termsrvDllFile
+    <#
+    .DESCRIPTION
+        Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
+    .NOTES
+        Expected output something like:
+
+        00098BA2: B8 8B
+        00098BA3: 00 99
+        00098BA4: 01 30
+        00098BA5: 00 03
+        00098BA7: 89 00
+        00098BA8: 81 8B
+        00098BA9: 38 B1
+        00098BAA: 06 34
+        00098BAB: 00 03
+        00098BAD: 90 00
+    #>
+
+    # Overwrite original DLL with patched version:
+    Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile
+
+    # Restore original Access Control List (ACL):
+    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+    Start-Sleep -Milliseconds 2500
+
+    # Start services again...
+    Start-Service TermService -PassThru
 }
 
-# OS is Windows 10
-if ($windowsVersion.Major -eq '10') {
-    if ($OSArchitecture -eq '32-bit') {
+# OS is Windows 10 or Windows 11
+if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
+    $patterns = @(
+        @{ Default = [regex] '39 81 3C 06 00 00(\s\S\S){6}' }
+        @{ Win1803 = [regex] '8B 99 [0-9A-Z]+(\s\S\S){7}(\s\x30{2}\s\x30{2})' }
+    )
+    
+    $matching = $patterns | Where-Object { $dllAsText -match $_.Values }
 
-    }
-    else {
-        switch ($(Get-FullOSBuildNumber)) {
-            '19044.1826' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 73 55 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-            '19044.1741' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 73 55 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-            '19044.1706' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 2B 86 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-            '19045.2251' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 85 45 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-            '19045.2546' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 85 45 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-            '19045.2913' { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 25 48 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-            Default { $dllAsTextReplaced = $dllAsText -replace '39 81 3C 06 00 00 0F 84 85 45 01 00', 'B8 00 01 00 00 89 81 38 06 00 00 90' }
-        }
+    $replaces = [regex] 'B8 00 01 00 00 89 81 38 06 00 00 90'
+
+    if ($matching) {
+        Write-Host 'Pattern matching!' -ForegroundColor Green
+
+        $dllAsTextReplaced = $dllAsText -replace $matching.Values, $replaces
+
+        # Use the replaced string to create a byte array again.
+        [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
+
+        # Create termsrv.dll.patched from the byte array.
+        Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
+
+        # Restore original Access Control List (ACL):
+        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+        fc.exe /B $termsrvPatched $termsrvDllFile
+        <#
+        .DESCRIPTION
+            Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
+        .NOTES
+            Expected output something like:
+
+            00098BA2: B8 8B
+            00098BA3: 00 99
+            00098BA4: 01 30
+            00098BA5: 00 03
+            00098BA7: 89 00
+            00098BA8: 81 8B
+            00098BA9: 38 B1
+            00098BAA: 06 34
+            00098BAB: 00 03
+            00098BAD: 90 00
+        #>
+
+        # Overwrite original DLL with patched version:
+        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile
+    } elseif ($dllAsText -match $replaces) {
+        Write-Host 'This file is already patched, no changes will be made.' -ForegroundColor Yellow
+
+        # Restore original Access Control List (ACL):
+        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+        # Start services again...
+        Start-Service TermService -PassThru
+        break
+    } else {
+        # Restore original Access Control List (ACL):
+        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+        # Start services again...
+        Start-Service TermService -PassThru
+        break
+
+        Write-Host 'No strings match specific regex patterns: ' -NoNewline -ForegroundColor Yellow
+        Write-Host ($patterns.Values -join ', ') -ForegroundColor Red
+        break
     }
 }
-
-# Use the replaced string to create a byte array again.
-[byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
-
-# Create termsrv.dll.patched from the byte array.
-Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
-
-# Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
-fc.exe /B $termsrvDllFile $termsrvPatched
-
-# Overwrite original DLL with patched version:
-Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile
-
-# Restore original Access Control List (ACL):
-Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
-
-Start-Sleep -Seconds 4
-
-# Start services again...
-Start-Service TermService
-Start-Service UmRdpService
