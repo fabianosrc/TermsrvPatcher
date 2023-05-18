@@ -37,14 +37,12 @@ Set-Location -Path C:\Users\YourUserName\Downloads
 cd c:\Users\YourUserName\Downloads
 ```
 
-Right click on TermsrvPacther.ps1, select 'Run with PowerShell' and enjoy :-)
-
-or
-
 > Run the script
 ```powershell
 .\TermsrvPatcher.ps1
 ```
+
+Or... Right click on TermsrvPacther.ps1, select 'Run with PowerShell' and enjoy :-)
 
 #### Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
