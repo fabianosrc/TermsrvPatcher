@@ -20,6 +20,10 @@ Requires PowerShell 5.1 or higher
 # How to use
 Download TermsrvPatcher.ps1 file and place it in any folder e.g.
 
+Right click on TermsrvPacther.ps1, 'Run with PowerShell' and enjoy :-)
+
+or
+
 ```txt
 C:\Users\YourUserName\Downloads
 ```
