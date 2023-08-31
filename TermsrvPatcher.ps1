@@ -97,7 +97,16 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
                 -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
                 -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
             }
-            Default {}
+            '7601.24546' {
+                $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
+                -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+            }
+            Default {
+                $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
+                -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+            }
         }
     }
 
