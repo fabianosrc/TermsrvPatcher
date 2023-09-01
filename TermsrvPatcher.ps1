@@ -110,8 +110,6 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
         }
     }
 
-    $dllAsTextReplaced = $dllAsText -replace $matching.Values, $replaces
-
     # Use the replaced string to create a byte array again.
     [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
 
