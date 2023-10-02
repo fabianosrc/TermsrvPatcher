@@ -153,18 +153,15 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
 # OS is Windows 10 or Windows 11
 if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
     $patterns = @(
-        @{ Default = [regex] '39 81 3C 06 00 00(\s\S\S){6}' }
-        @{ Win1803 = [regex] '8B 99 [0-9A-Z]+(\s\S\S){7}(\s\x30{2}\s\x30{2})' }
+        @{ Pattern = [regex] '39 81 3C 06 00 00(\s\S\S){6}' }
     )
-    
-    $matching = $patterns | Where-Object { $dllAsText -match $_.Values }
 
-    $replaces = [regex] 'B8 00 01 00 00 89 81 38 06 00 00 90'
+    $matching = $patterns | Where-Object { $dllAsText -match $_.Values }
 
     if ($matching) {
         Write-Host 'Pattern matching!' -ForegroundColor Green
 
-        $dllAsTextReplaced = $dllAsText -replace $matching.Values, $replaces
+        $dllAsTextReplaced = $dllAsText -replace $matching.Values, [string] 'B8 00 01 00 00 89 81 38 06 00 00 90'
 
         # Use the replaced string to create a byte array again.
         [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
