@@ -68,7 +68,7 @@ $termsrvDllAcl = Get-Acl -Path $termsrvDllFile
 Write-Host "Owner of termsrv.dll: $($termsrvDllAcl.Owner)"
 
 # Create a backup of the original termsrv.dll file.
-Copy-Item -Path $termsrvDllFile -Destination "$env:SystemRoot\System32\termsrv.dll.copy"
+Copy-Item -Path $termsrvDllFile -Destination "$env:SystemRoot\System32\termsrv.dll.copy" -Force
 
 # Take ownership of the DLL...
 takeown.exe /F $termsrvDllFile
@@ -139,7 +139,7 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
     #>
 
     # Overwrite original DLL with patched version:
-    Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile
+    Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
 
     # Restore original Access Control List (ACL):
     Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
@@ -192,7 +192,7 @@ if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
         #>
 
         # Overwrite original DLL with patched version:
-        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile
+        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
     } elseif ($dllAsText -match $replaces) {
         Write-Host 'This file is already patched, no changes will be made.' -ForegroundColor Yellow
 
