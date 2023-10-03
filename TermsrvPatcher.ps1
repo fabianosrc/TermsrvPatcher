@@ -88,9 +88,7 @@ $dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
 # OS is Windows 7
 if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
     if ($OSArchitecture -eq '32-bit') {
-
-    }
-    else {
+    } else {
         switch ($(Get-FullOSBuildNumber)) {
             '7601.23964' {
                 $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
@@ -115,9 +113,6 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
 
     # Create termsrv.dll.patched from the byte array.
     Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
-
-    # Restore original Access Control List (ACL):
-    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
 
     fc.exe /B $termsrvPatched $termsrvDllFile
     <#
@@ -169,8 +164,8 @@ if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
         # Create termsrv.dll.patched from the byte array.
         Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
 
-        # Restore original Access Control List (ACL):
-        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+        # Overwrite original DLL with patched version:
+        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
 
         fc.exe /B $termsrvPatched $termsrvDllFile
         <#
@@ -191,8 +186,8 @@ if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
             00098BAD: 90 00
         #>
 
-        # Overwrite original DLL with patched version:
-        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
+        # Restore original Access Control List (ACL):
+        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
     } elseif ($dllAsText -match $replaces) {
         Write-Host 'This file is already patched, no changes will be made.' -ForegroundColor Yellow
 
