@@ -73,8 +73,8 @@ Copy-Item -Path $termsrvDllFile -Destination "$env:SystemRoot\System32\termsrv.d
 # Take ownership of the DLL...
 takeown.exe /F $termsrvDllFile
 
-# Get Current User logged in
-$currentUserName = (Get-WmiObject -Class Win32_ComputerSystem).UserName
+# Get Current logged in user (changed by .NET class, because in remote connection WMI Object cannot retrieve the user)
+$currentUserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 # Grant full control to the currently logged in user.
 icacls.exe $termsrvDllFile /grant "$($currentUserName):F"
