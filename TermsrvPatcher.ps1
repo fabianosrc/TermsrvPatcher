@@ -52,14 +52,15 @@ function Get-FullOSBuildNumber {
     return $currentBuild, $updateBuildRevision -join '.'
 }
 
-if ((Get-Service -Name TermService).Status -eq 'Running') {
-    switch ((Get-Culture).Name) {
-        'pt-BR' { Write-Host $("O serviço $((Get-Service -Name TermService).DisplayName) será encerrado agora.") -ForegroundColor Green }
-        Default { Write-Host $("The $((Get-Service -Name TermService).DisplayName) service is stopping now.") -ForegroundColor Green }
+if ((Get-Service -ServiceName TermService).Status -eq 'Running') {
+    while ((Get-Service -ServiceName TermService).Status -ne 'Stopped') {
+        try {
+            Stop-Service -ServiceName TermService -Force -PassThru
+            Start-Sleep -Milliseconds 1500
+        } catch {
+            Write-Warning -Message $_.Exception.Message
+        }
     }
-
-    Start-Sleep -Milliseconds 2500
-    Stop-Service -Name TermService -Force
 }
 
 # Save Access Control List (ACL) of termsrv.dll file.
