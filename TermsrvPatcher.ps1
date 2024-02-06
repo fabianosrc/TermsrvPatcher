@@ -155,7 +155,7 @@ if ($windowsVersion.Major -eq '10') {
     $matching = $patterns | Where-Object { $dllAsText -match $_.Values }
 
     if ($matching) {
-        Write-Host 'Pattern matching!' -ForegroundColor Green
+        Write-Host "`nPattern matching!`n" -ForegroundColor Green
 
         $dllAsTextReplaced = $dllAsText -replace $matching.Values, [string] 'B8 00 01 00 00 89 81 38 06 00 00 90'
 
@@ -190,7 +190,7 @@ if ($windowsVersion.Major -eq '10') {
         # Restore original Access Control List (ACL):
         Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
     } elseif ($dllAsText -match $replaces) {
-        Write-Host 'This file is already patched, no changes will be made.' -ForegroundColor Yellow
+        Write-Host "`nThis file is already patched, no changes will be made.`n" -ForegroundColor Green
 
         # Restore original Access Control List (ACL):
         Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
@@ -204,7 +204,7 @@ if ($windowsVersion.Major -eq '10') {
         # Start services again...
         Start-Service TermService -PassThru
 
-        Write-Host 'No strings match specific regex patterns: ' -NoNewline -ForegroundColor Yellow
+        Write-Host "`nNo strings match specific regex patterns: `n" -NoNewline -ForegroundColor Red
         Write-Host ($patterns.Values -join ', ') -ForegroundColor Red
     }
 }
