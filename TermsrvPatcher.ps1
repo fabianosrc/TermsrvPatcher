@@ -134,6 +134,8 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
         00098BAD: 90 00
     #>
 
+    Start-Sleep -Milliseconds 1500
+
     # Overwrite original DLL with patched version:
     Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
 
@@ -183,6 +185,8 @@ if ($windowsVersion.Major -eq '10') {
             00098BAB: 00 03
             00098BAD: 90 00
         #>
+
+        Start-Sleep -Milliseconds 1500
 
         # Overwrite original DLL with patched version:
         Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
