@@ -165,9 +165,6 @@ if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
         # Create termsrv.dll.patched from the byte array.
         Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
 
-        # Overwrite original DLL with patched version:
-        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
-
         fc.exe /B $termsrvPatched $termsrvDllFile
         <#
         .DESCRIPTION
@@ -186,6 +183,9 @@ if ($windowsVersion.Major -eq '10' -or $windowsVersion.Major -eq '11') {
             00098BAB: 00 03
             00098BAD: 90 00
         #>
+
+        # Overwrite original DLL with patched version:
+        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
 
         # Restore original Access Control List (ACL):
         Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
