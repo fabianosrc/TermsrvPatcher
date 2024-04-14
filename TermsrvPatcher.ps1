@@ -193,6 +193,9 @@ if ($windowsVersion.Major -eq '10') {
 
         # Restore original Access Control List (ACL):
         Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+        # Start services again...
+        Start-Service TermService -PassThru
     } elseif ($dllAsText -match $replaces) {
         Write-Host "`nThis file is already patched, no changes will be made.`n" -ForegroundColor Green
 
