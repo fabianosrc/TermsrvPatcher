@@ -190,28 +190,16 @@ if ($windowsVersion.Major -eq '10') {
 
         # Overwrite original DLL with patched version:
         Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
-
-        # Restore original Access Control List (ACL):
-        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
-
-        # Start services again...
-        Start-Service TermService -PassThru
     } elseif ($dllAsText -match $replaces) {
         Write-Host "`nThis file is already patched, no changes will be made.`n" -ForegroundColor Green
-
-        # Restore original Access Control List (ACL):
-        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
-
-        # Start services again...
-        Start-Service TermService -PassThru
     } else {
-        # Restore original Access Control List (ACL):
-        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
-
-        # Start services again...
-        Start-Service TermService -PassThru
-
         Write-Host "`nNo strings match specific regex patterns: `n" -NoNewline -ForegroundColor Red
         Write-Host ($patterns.Values -join ', ') -ForegroundColor Red
     }
+
+    # Restore original Access Control List (ACL):
+    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+    # Start services again...
+    Start-Service TermService -PassThru
 }
