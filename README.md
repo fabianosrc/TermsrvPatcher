@@ -15,7 +15,7 @@ This work is based on the [patch-termsrv.dll](https://github.com/ReneNyffenegger
 ## Prerequisites
 Requires PowerShell 5.1 or higher
 
-[Download and install Windows PowerShell 5.1](https://docs.microsoft.com/en-us/skypeforbusiness/set-up-your-computer-for-windows-powershell/download-and-install-windows-powershell-5-1)
+[Download and install Windows PowerShell 5.1](https://www.microsoft.com/en-us/download/details.aspx?id=54616)
 
 # How to use
 Download TermsrvPatcher.ps1 file and place it in any folder e.g.
