@@ -1,5 +1,5 @@
 # TermsrvPatcher
-![Environment](https://img.shields.io/badge/Windows-7,%2010-brightgreen.svg)
+![Environment](https://img.shields.io/badge/Windows-7,%2010,%2011-brightgreen.svg)
 ![license](https://img.shields.io/github/license/fabianomsrc/TermsrvPatcher)
 
 Patch termsrv.dll so that multiple remote users can open an RDP session on a non-Windows Server computer
