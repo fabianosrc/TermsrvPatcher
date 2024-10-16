@@ -81,7 +81,7 @@ $currentUserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Nam
 icacls.exe $termsrvDllFile /grant "$($currentUserName):F"
 
 # Read termsrv.dll as byte array to modify bytes
-$dllAsByte = Get-Content -Path $termsrvDllFile -Raw -Encoding Byte
+$dllAsByte = [System.IO.File]::ReadAllBytes($termsrvDllFile)
 
 # Convert the byte array to a string that represents each byte value as a hexadecimal value, separated by spaces
 $dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
@@ -113,7 +113,7 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
     [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
 
     # Create termsrv.dll.patched from the byte array.
-    Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
+    [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
 
     fc.exe /B $termsrvPatched $termsrvDllFile
     <#
@@ -165,7 +165,7 @@ if ($windowsVersion.Major -eq '10') {
         [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
 
         # Create termsrv.dll.patched from the byte array.
-        Set-Content -Path $termsrvPatched -Value $dllAsBytesReplaced -Encoding Byte
+        [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
 
         fc.exe /B $termsrvPatched $termsrvDllFile
         <#
