@@ -2,6 +2,8 @@
 ![Environment](https://img.shields.io/badge/Windows-7,%2010,%2011-brightgreen.svg)
 ![license](https://img.shields.io/github/license/fabianomsrc/TermsrvPatcher)
 
+# Patch on Windows 11 24H2 is not working yet. Please be patient...
+
 Patch termsrv.dll so that multiple remote users can open an RDP session on a non-Windows Server computer
 
 ## Credits
@@ -19,8 +21,6 @@ Requires PowerShell 5.1 or higher
 
 # How to use
 Download TermsrvPatcher.ps1 file and place it in any folder e.g.
-
-# Patch on Windows 11 24H2 is not working yet. Please be patient...
 
 ```txt
 C:\Users\YourUserName\Downloads
