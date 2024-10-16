@@ -20,7 +20,7 @@ Requires PowerShell 5.1 or higher
 # How to use
 Download TermsrvPatcher.ps1 file and place it in any folder e.g.
 
-#  :warning: PLEASE DO NOT RUN ON WINDOWS 11 24H2 YET :warning:
+# Patch on Windows 11 24H2 is not working yet. Please be patient...
 
 ```txt
 C:\Users\YourUserName\Downloads
