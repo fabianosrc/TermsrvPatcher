@@ -151,7 +151,7 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
 # OS is Windows 10 or Windows 11
 if ($windowsVersion.Major -eq '10') {
     $patterns = @(
-        @{ Pattern = [regex] '39 81 3C 06 00 00(\s\S\S){6}' }
+        @{ Pattern = [regex] '39 81 3C 06 00 00 0F (?:[0-9A-F]{2} ){4}00' }
     )
 
     $matching = $patterns | Where-Object { $dllAsText -match $_.Values }
