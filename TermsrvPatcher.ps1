@@ -148,8 +148,8 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
     Start-Service TermService -PassThru
 }
 
-# OS is Windows 10 or Windows 11
-if ($windowsVersion.Major -eq '10') {
+# OS is Windows 10
+if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
     $patterns = @(
         @{ Pattern = [regex] '39 81 3C 06 00 00 0F (?:[0-9A-F]{2} ){4}00' }
     )
@@ -202,4 +202,9 @@ if ($windowsVersion.Major -eq '10') {
 
     # Start services again...
     Start-Service TermService -PassThru
+}
+
+# OS is Windows 11
+if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -gt '2200') {
+
 }
