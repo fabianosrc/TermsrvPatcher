@@ -45,15 +45,11 @@ $OSArchitecture = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitect
 $termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
 $termsrvPatched = "$env:SystemRoot\System32\termsrv.dll.patched"
 
-function Get-OSInfo {
-    $OSInfo = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+function Get-FullOSBuildNumber {
+    $currentBuild = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentBuild).CurrentBuild
+    $updateBuildRevision = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
 
-    [PSCustomObject]@{
-        CurrentBuild = $OSInfo.CurrentBuild
-        BuildRevision = $OSInfo.UBR
-        FullBuild = "$($OSInfo.CurrentBuild).$($OSInfo.UBR)"
-        DisplayVersion = $OSInfo.DisplayVersion
-    }
+    return $currentBuild, $updateBuildRevision -join '.'
 }
 
 if ((Get-Service -ServiceName TermService).Status -eq 'Running') {
@@ -94,7 +90,7 @@ $dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
 if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
     if ($OSArchitecture -eq '32-bit') {
     } else {
-        switch ((Get-OSInfo).FullOSBuild) {
+        switch ($(Get-FullOSBuildNumber)) {
             '7601.23964' {
                 $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
                 -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
