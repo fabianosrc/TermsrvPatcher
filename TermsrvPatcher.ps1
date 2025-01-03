@@ -245,7 +245,7 @@ if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
 
     # OS is Windows 11
 } elseif ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -gt '2200') {
-    if ($OSInfo.DisplayVersion -eq '24H2') {
+    if ((Get-OSInfo).DisplayVersion -eq '24H2') {
         $params = @{
             InputPattern = $patterns.Win24H2
             Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
