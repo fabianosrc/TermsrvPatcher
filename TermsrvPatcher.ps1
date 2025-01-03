@@ -135,16 +135,22 @@ function Update-Dll {
     }
 }
 
-if ((Get-Service -ServiceName TermService).Status -eq 'Running') {
-    while ((Get-Service -ServiceName TermService).Status -ne 'Stopped') {
-        try {
-            Stop-Service -ServiceName TermService -Force -PassThru
-            Start-Sleep -Milliseconds 1500
-        } catch {
-            Write-Warning -Message $_.Exception.Message
-        }
+function Stop-TermService {
+    try {
+        Stop-Service -Name TermService -Force -ErrorAction Stop
+    } catch {
+        Write-Warning -Message $_.Exception.Message
+        return
     }
+
+    while ((Get-Service -Name TermService).Status -ne 'Stopped') {
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Host "`nThe Remote Desktop Services (TermService) has been stopped sucsessfully`n" -ForegroundColor Green
 }
+
+Stop-TermService
 
 # Save Access Control List (ACL) of termsrv.dll file.
 $termsrvDllAcl = Get-Acl -Path $termsrvDllFile
