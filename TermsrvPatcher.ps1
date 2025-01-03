@@ -45,11 +45,20 @@ $OSArchitecture = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitect
 $termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
 $termsrvPatched = "$env:SystemRoot\System32\termsrv.dll.patched"
 
-function Get-FullOSBuildNumber {
-    $currentBuild = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentBuild).CurrentBuild
-    $updateBuildRevision = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name UBR).UBR
+$patterns = @{
+    Pattern = [regex]'39 81 3C 06 00 00 0F (?:[0-9A-F]{2} ){4}00'
+    Win24H2 = [regex]'8B 81 38 06 00 00 39 81 3C 06 00 00 75'
+}
 
-    return $currentBuild, $updateBuildRevision -join '.'
+function Get-OSInfo {
+    $OSInfo = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+
+    [PSCustomObject]@{
+        CurrentBuild = $OSInfo.CurrentBuild
+        BuildRevision = $OSInfo.UBR
+        FullOSBuild = "$($OSInfo.CurrentBuild).$($OSInfo.UBR)"
+        DisplayVersion = $OSInfo.DisplayVersion
+    }
 }
 
 if ((Get-Service -ServiceName TermService).Status -eq 'Running') {
@@ -90,7 +99,7 @@ $dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
 if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
     if ($OSArchitecture -eq '32-bit') {
     } else {
-        switch ($(Get-FullOSBuildNumber)) {
+        switch ((Get-OSInfo).FullOSBuild) {
             '7601.23964' {
                 $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
                 -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
@@ -150,16 +159,13 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
 
 # OS is Windows 10
 if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
-    $patterns = @(
-        @{ Pattern = [regex] '39 81 3C 06 00 00 0F (?:[0-9A-F]{2} ){4}00' }
-    )
 
-    $matching = $patterns | Where-Object { $dllAsText -match $_.Values }
+    $match = $patterns.Pattern | Where-Object { $dllAsText -match $_ }
 
-    if ($matching) {
+    if ($match) {
         Write-Host "`nPattern matching!`n" -ForegroundColor Green
 
-        $dllAsTextReplaced = $dllAsText -replace $matching.Values, [string] 'B8 00 01 00 00 89 81 38 06 00 00 90'
+        $dllAsTextReplaced = $dllAsText -replace $match, [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
 
         # Use the replaced string to create a byte array again.
         [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
