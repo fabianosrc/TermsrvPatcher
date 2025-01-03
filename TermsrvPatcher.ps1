@@ -91,7 +91,7 @@ function Update-Dll {
         if ($match) {
             Write-Host "`nPattern matching!`n" -ForegroundColor Green
 
-            $dllAsTextReplaced = $TermsrvDllAsText -replace $match, $Replacement
+            $dllAsTextReplaced = $TermsrvDllAsText -replace $InputPattern, $Replacement
 
             # Use the replaced string to create a byte array again.
             [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
