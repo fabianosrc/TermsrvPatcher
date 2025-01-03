@@ -100,10 +100,10 @@ function Update-Dll {
             # Create termsrv.dll.patched from the byte array.
             [System.IO.File]::WriteAllBytes($TermsrvDllAsPatch, $dllAsBytesReplaced)
 
-            fc.exe /B $TermsrvDllAsPatch $TermsrvDllAsFile
+            fc.exe /b $TermsrvDllAsPatch $TermsrvDllAsFile
             <#
             .DESCRIPTION
-                Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
+                Compare patched and original DLL (/b: binary comparison) and displays the differences between them.
             .NOTES
                 Expected output something like:
 
