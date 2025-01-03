@@ -196,11 +196,8 @@ if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
 
         # Overwrite original DLL with patched version:
         Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
-    } elseif ($dllAsText -match $replaces) {
-        Write-Host "`nThis file is already patched, no changes will be made.`n" -ForegroundColor Green
     } else {
-        Write-Host "`nNo strings match specific regex patterns: `n" -NoNewline -ForegroundColor Red
-        Write-Host ($patterns.Values -join ', ') -ForegroundColor Red
+        Write-Warning -Message 'The pattern was not found. Therefore, no changes will be made.'
     }
 
     # Restore original Access Control List (ACL):
