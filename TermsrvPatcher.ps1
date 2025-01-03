@@ -61,6 +61,79 @@ function Get-OSInfo {
     }
 }
 
+function Update-Dll {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [regex]$InputPattern,
+
+        [Parameter(Mandatory)]
+        [string]$Replacement,
+
+        [Parameter(Mandatory)]
+        [string]$TermsrvDllAsText,
+
+        [Parameter(Mandatory)]
+        [string]$TermsrvDllAsFile,
+
+        [Parameter(Mandatory)]
+        [string]$TermsrvDllAsPatch,
+
+        [Parameter(Mandatory)]
+        [System.Security.AccessControl.FileSecurity]$TermsrvAclObject
+    )
+
+    begin {
+        $match = $TermsrvDllAsText -match $InputPattern
+    }
+
+    process {
+        if ($match) {
+            Write-Host "`nPattern matching!`n" -ForegroundColor Green
+
+            $dllAsTextReplaced = $TermsrvDllAsText -replace $match, $Replacement
+
+            # Use the replaced string to create a byte array again.
+            [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
+
+            # Create termsrv.dll.patched from the byte array.
+            [System.IO.File]::WriteAllBytes($TermsrvDllAsPatch, $dllAsBytesReplaced)
+
+            fc.exe /B $TermsrvDllAsPatch $TermsrvDllAsFile
+            <#
+            .DESCRIPTION
+                Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
+            .NOTES
+                Expected output something like:
+
+                00098BA2: B8 8B
+                00098BA3: 00 99
+                00098BA4: 01 30
+                00098BA5: 00 03
+                00098BA7: 89 00
+                00098BA8: 81 8B
+                00098BA9: 38 B1
+                00098BAA: 06 34
+                00098BAB: 00 03
+                00098BAD: 90 00
+            #>
+
+            Start-Sleep -Milliseconds 1500
+
+            # Overwrite original DLL with patched version:
+            Copy-Item -Path $TermsrvDllAsPatch -Destination $TermsrvDllAsFile -Force
+        } else {
+            Write-Warning -Message 'The pattern was not found. Therefore, no changes will be made.'
+        }
+
+        # Restore original Access Control List (ACL):
+        Set-Acl -Path $TermsrvDllAsFile -AclObject $TermsrvAclObject
+
+        # Start services again...
+        Start-Service TermService -PassThru
+    }
+}
+
 if ((Get-Service -ServiceName TermService).Status -eq 'Running') {
     while ((Get-Service -ServiceName TermService).Status -ne 'Stopped') {
         try {
@@ -159,55 +232,31 @@ if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
 
 # OS is Windows 10
 if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
-
-    $match = $patterns.Pattern | Where-Object { $dllAsText -match $_ }
-
-    if ($match) {
-        Write-Host "`nPattern matching!`n" -ForegroundColor Green
-
-        $dllAsTextReplaced = $dllAsText -replace $match, [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
-
-        # Use the replaced string to create a byte array again.
-        [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
-
-        # Create termsrv.dll.patched from the byte array.
-        [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
-
-        fc.exe /B $termsrvPatched $termsrvDllFile
-        <#
-        .DESCRIPTION
-            Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
-        .NOTES
-            Expected output something like:
-
-            00098BA2: B8 8B
-            00098BA3: 00 99
-            00098BA4: 01 30
-            00098BA5: 00 03
-            00098BA7: 89 00
-            00098BA8: 81 8B
-            00098BA9: 38 B1
-            00098BAA: 06 34
-            00098BAB: 00 03
-            00098BAD: 90 00
-        #>
-
-        Start-Sleep -Milliseconds 1500
-
-        # Overwrite original DLL with patched version:
-        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
-    } else {
-        Write-Warning -Message 'The pattern was not found. Therefore, no changes will be made.'
+    $params = @{
+        InputPattern = $patterns.Pattern
+        Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
+        TermsrvDllAsText = $dllAsText
+        TermsrvDllAsFile = $termsrvDllFile
+        TermsrvDllAsPatch = $termsrvPatched
+        TermsrvAclObject = $termsrvDllAcl
     }
 
-    # Restore original Access Control List (ACL):
-    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+    Update-Dll @params
 
-    # Start services again...
-    Start-Service TermService -PassThru
-}
+    # OS is Windows 11
+} elseif ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -gt '2200') {
+    if ($OSInfo.DisplayVersion -eq '24H2') {
+        $params = @{
+            InputPattern = $patterns.Win24H2
+            Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
+            TermsrvDllAsText = $dllAsText
+            TermsrvDllAsFile = $termsrvDllFile
+            TermsrvDllAsPatch = $termsrvPatched
+            TermsrvAclObject = $termsrvDllAcl
+        }
 
-# OS is Windows 11
-if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -gt '2200') {
-
+        Update-Dll @params
+    }
+} else {
+    Write-Warning 'Unable to get Windows version'
 }
