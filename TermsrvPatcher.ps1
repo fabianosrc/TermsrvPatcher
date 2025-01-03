@@ -43,6 +43,7 @@ $windowsVersion = [System.Environment]::OSVersion.Version
 $OSArchitecture = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture
 
 $termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
+$termsrvDllCopy = "$env:SystemRoot\System32\termsrv.dll.copy"
 $termsrvPatched = "$env:SystemRoot\System32\termsrv.dll.patched"
 
 $patterns = @{
@@ -151,7 +152,7 @@ $termsrvDllAcl = Get-Acl -Path $termsrvDllFile
 Write-Host "Owner of termsrv.dll: $($termsrvDllAcl.Owner)"
 
 # Create a backup of the original termsrv.dll file.
-Copy-Item -Path $termsrvDllFile -Destination "$env:SystemRoot\System32\termsrv.dll.copy" -Force
+Copy-Item -Path $termsrvDllFile -Destination $termsrvDllCopy -Force
 
 # Take ownership of the DLL...
 takeown.exe /F $termsrvDllFile
