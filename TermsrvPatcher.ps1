@@ -280,6 +280,16 @@ switch (Get-OSVersion) {
         }
     }
     'Windows Server 2022' {
+        $params = @{
+            InputPattern = $patterns.Pattern
+            Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
+            TermsrvDllAsText = $dllAsText
+            TermsrvDllAsFile = $termsrvDllFile
+            TermsrvDllAsPatch = $termsrvPatched
+            TermsrvAclObject = $termsrvDllAcl
+        }
+
+        Update-Dll @params
     }
     'Unsupported OS' {
         Write-Host 'Unable to get OS Version'
