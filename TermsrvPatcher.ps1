@@ -190,87 +190,70 @@ $dllAsByte = [System.IO.File]::ReadAllBytes($termsrvDllFile)
 # Convert the byte array to a string that represents each byte value as a hexadecimal value, separated by spaces
 $dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
 
-# OS is Windows 7
-if ($windowsVersion.Major -eq '6' -and $windowsVersion.Minor -eq '1') {
-    if ($OSArchitecture -eq '32-bit') {
-    } else {
-        switch ((Get-OSInfo).FullOSBuild) {
-            '7601.23964' {
-                $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
-                -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
-            }
-            '7601.24546' {
-                $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
-                -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
-            }
-            Default {
-                $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
-                -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+switch (Get-OSVersion) {
+    'Windows 7' {
+        if ($OSArchitecture -eq '64-bit') {
+            switch ((Get-OSInfo).FullOSBuild) {
+                '7601.23964' {
+                    $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
+                    -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                    -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                }
+                '7601.24546' {
+                    $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
+                    -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                    -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                }
+                Default {
+                    $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
+                    -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                    -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                }
             }
         }
+
+        # Use the replaced string to create a byte array again.
+        [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
+
+        # Create termsrv.dll.patched from the byte array.
+        [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
+
+        fc.exe /B $termsrvPatched $termsrvDllFile
+        <#
+        .DESCRIPTION
+            Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
+        .NOTES
+            Expected output something like:
+
+            00098BA2: B8 8B
+            00098BA3: 00 99
+            00098BA4: 01 30
+            00098BA5: 00 03
+            00098BA7: 89 00
+            00098BA8: 81 8B
+            00098BA9: 38 B1
+            00098BAA: 06 34
+            00098BAB: 00 03
+            00098BAD: 90 00
+        #>
+
+        Start-Sleep -Milliseconds 1500
+
+        # Overwrite original DLL with patched version:
+        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
+
+        # Restore original Access Control List (ACL):
+        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+
+        Start-Sleep -Milliseconds 2500
+
+        # Start services again...
+        Start-Service TermService -PassThru
     }
-
-    # Use the replaced string to create a byte array again.
-    [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
-
-    # Create termsrv.dll.patched from the byte array.
-    [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
-
-    fc.exe /B $termsrvPatched $termsrvDllFile
-    <#
-    .DESCRIPTION
-        Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
-    .NOTES
-        Expected output something like:
-
-        00098BA2: B8 8B
-        00098BA3: 00 99
-        00098BA4: 01 30
-        00098BA5: 00 03
-        00098BA7: 89 00
-        00098BA8: 81 8B
-        00098BA9: 38 B1
-        00098BAA: 06 34
-        00098BAB: 00 03
-        00098BAD: 90 00
-    #>
-
-    Start-Sleep -Milliseconds 1500
-
-    # Overwrite original DLL with patched version:
-    Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
-
-    # Restore original Access Control List (ACL):
-    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
-
-    Start-Sleep -Milliseconds 2500
-
-    # Start services again...
-    Start-Service TermService -PassThru
-}
-
-# OS is Windows 10
-if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
-    $params = @{
-        InputPattern = $patterns.Pattern
-        Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
-        TermsrvDllAsText = $dllAsText
-        TermsrvDllAsFile = $termsrvDllFile
-        TermsrvDllAsPatch = $termsrvPatched
-        TermsrvAclObject = $termsrvDllAcl
-    }
-
-    Update-Dll @params
-
-    # OS is Windows 11
-} elseif ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -gt '2200') {
-    if ((Get-OSInfo).DisplayVersion -eq '24H2') {
+    'Windows 10' {
         $params = @{
-            InputPattern = $patterns.Win24H2
-            Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
+            InputPattern = $patterns.Pattern
+            Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
             TermsrvDllAsText = $dllAsText
             TermsrvDllAsFile = $termsrvDllFile
             TermsrvDllAsPatch = $termsrvPatched
@@ -279,6 +262,24 @@ if ($windowsVersion.Major -eq '10' -and $windowsVersion.Build -lt '2200') {
 
         Update-Dll @params
     }
-} else {
-    Write-Warning 'Unable to get Windows version'
+    'Windows 11' {
+        if ((Get-OSInfo).DisplayVersion -eq '24H2') {
+            $params = @{
+                InputPattern = $patterns.Win24H2
+                Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
+                TermsrvDllAsText = $dllAsText
+                TermsrvDllAsFile = $termsrvDllFile
+                TermsrvDllAsPatch = $termsrvPatched
+                TermsrvAclObject = $termsrvDllAcl
+            }
+
+            Update-Dll @params
+        }
+    }
+    'Windows Server 2022' {
+
+    }
+    'Unsupported OS' {
+        Write-Host 'Unable to get OS Version'
+    }
 }
