@@ -101,6 +101,7 @@ function Update-Dll {
 
     begin {
         $match = $TermsrvDllAsText -match $InputPattern
+        $patch = $TermsrvDllAsText -match $Replacement
     }
 
     process {
@@ -138,8 +139,10 @@ function Update-Dll {
 
             # Overwrite original DLL with patched version:
             Copy-Item -Path $TermsrvDllAsPatch -Destination $TermsrvDllAsFile -Force
+        } elseif ($patch) {
+            Write-Host "The file is already patched. No changes are needed.`n" -ForegroundColor Green
         } else {
-            Write-Warning -Message 'The pattern was not found. Therefore, no changes will be made.'
+            Write-Host "The pattern was not found. Nothing will be changed.`n" -ForegroundColor Yellow
         }
 
         # Restore original Access Control List (ACL):
