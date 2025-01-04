@@ -39,7 +39,6 @@ if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Exit
 }
 
-$windowsVersion = [System.Environment]::OSVersion.Version
 $OSArchitecture = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture
 
 $termsrvDllFile = "$env:SystemRoot\System32\termsrv.dll"
@@ -59,6 +58,22 @@ function Get-OSInfo {
         BuildRevision = $OSInfo.UBR
         FullOSBuild = "$($OSInfo.CurrentBuild).$($OSInfo.UBR)"
         DisplayVersion = $OSInfo.DisplayVersion
+    }
+}
+
+function Get-OSVersion {
+    $OSVersion = [System.Environment]::OSVersion.Version
+
+    if ($OSVersion.Major -eq 6 -and $OSVersion.Minor -eq 1) {
+        return 'Windows 7'
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000) {
+        return 'Windows 10'
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -gt 22000) {
+        return 'Windows 11'
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 20348) {
+        return 'Windows Server 2022'
+    } else {
+        return 'Unsupported OS'
     }
 }
 
