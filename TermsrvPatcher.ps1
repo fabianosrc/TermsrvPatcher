@@ -266,7 +266,18 @@ switch (Get-OSVersion) {
         Update-Dll @params
     }
     'Windows 11' {
-        if ((Get-OSInfo).DisplayVersion -eq '24H2') {
+        if (((Get-OSInfo).DisplayVersion -eq '23H2')) {
+            $params = @{
+                InputPattern = $patterns.Pattern
+                Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
+                TermsrvDllAsText = $dllAsText
+                TermsrvDllAsFile = $termsrvDllFile
+                TermsrvDllAsPatch = $termsrvPatched
+                TermsrvAclObject = $termsrvDllAcl
+            }
+
+            Update-Dll @params
+        } elseif ((Get-OSInfo).DisplayVersion -eq '24H2') {
             $params = @{
                 InputPattern = $patterns.Win24H2
                 Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
