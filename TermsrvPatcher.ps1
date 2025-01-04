@@ -58,6 +58,7 @@ function Get-OSInfo {
         BuildRevision = $OSInfo.UBR
         FullOSBuild = "$($OSInfo.CurrentBuild).$($OSInfo.UBR)"
         DisplayVersion = $OSInfo.DisplayVersion
+        InstallationType = $OSInfo.InstallationType
     }
 }
 
