@@ -64,13 +64,16 @@ function Get-OSInfo {
 
 function Get-OSVersion {
     [version]$OSVersion = [System.Environment]::OSVersion.Version
+    $installationType = (Get-OSInfo).InstallationType
 
     if ($OSVersion.Major -eq 6 -and $OSVersion.Minor -eq 1) {
         return 'Windows 7'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000 -and $OSVersion.Build -ne 20348) {
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000 -and $installationType -eq 'Client') {
         return 'Windows 10'
     } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -gt 22000) {
         return 'Windows 11'
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000 -and $installationType -eq 'Server') {
+        return 'Windows Server 2016'
     } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 20348) {
         return 'Windows Server 2022'
     } else {
@@ -290,6 +293,9 @@ switch (Get-OSVersion) {
 
             Update-Dll @params
         }
+    }
+    'Windows Server 2016' {
+
     }
     'Windows Server 2022' {
         $params = @{
