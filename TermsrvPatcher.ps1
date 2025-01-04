@@ -197,6 +197,13 @@ $dllAsByte = [System.IO.File]::ReadAllBytes($termsrvDllFile)
 # Convert the byte array to a string that represents each byte value as a hexadecimal value, separated by spaces
 $dllAsText = ($dllAsByte | ForEach-Object { $_.ToString('X2') }) -join ' '
 
+$commonParams = @{
+    TermsrvDllAsText = $dllAsText
+    TermsrvDllAsFile = $termsrvDllFile
+    TermsrvDllAsPatch = $termsrvPatched
+    TermsrvAclObject = $termsrvDllAcl
+}
+
 switch (Get-OSVersion) {
     'Windows 7' {
         if ($OSArchitecture -eq '64-bit') {
@@ -258,56 +265,20 @@ switch (Get-OSVersion) {
         Start-Service TermService -PassThru
     }
     'Windows 10' {
-        $params = @{
-            InputPattern = $patterns.Pattern
-            Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
-            TermsrvDllAsText = $dllAsText
-            TermsrvDllAsFile = $termsrvDllFile
-            TermsrvDllAsPatch = $termsrvPatched
-            TermsrvAclObject = $termsrvDllAcl
-        }
-
-        Update-Dll @params
+        Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Windows 11' {
         if ((Get-OSInfo).DisplayVersion -eq '23H2') {
-            $params = @{
-                InputPattern = $patterns.Pattern
-                Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
-                TermsrvDllAsText = $dllAsText
-                TermsrvDllAsFile = $termsrvDllFile
-                TermsrvDllAsPatch = $termsrvPatched
-                TermsrvAclObject = $termsrvDllAcl
-            }
-
-            Update-Dll @params
+            Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
         } elseif ((Get-OSInfo).DisplayVersion -eq '24H2') {
-            $params = @{
-                InputPattern = $patterns.Win24H2
-                Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
-                TermsrvDllAsText = $dllAsText
-                TermsrvDllAsFile = $termsrvDllFile
-                TermsrvDllAsPatch = $termsrvPatched
-                TermsrvAclObject = $termsrvDllAcl
-            }
-
-            Update-Dll @params
+            Update-Dll @commonParams -InputPattern $patterns.Win24H2 -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
         }
     }
     'Windows Server 2016' {
-
+        Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Windows Server 2022' {
-        $params = @{
-            InputPattern = $patterns.Pattern
-            Replacement = [string]'B8 00 01 00 00 89 81 38 06 00 00 90'
-            TermsrvDllAsText = $dllAsText
-            TermsrvDllAsFile = $termsrvDllFile
-            TermsrvDllAsPatch = $termsrvPatched
-            TermsrvAclObject = $termsrvDllAcl
-        }
-
-        Update-Dll @params
+        Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Unsupported OS' {
         Write-Host 'Unable to get OS Version'
