@@ -48,4 +48,5 @@ Or... Right click on TermsrvPacther.ps1, select 'Run with PowerShell' and enjoy 
 
 #### Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
- - Windows 10 and Windows 11 23H2
+ - Windows 10 and Windows 11 23H2/24H2
+ - Windows Server 2022
