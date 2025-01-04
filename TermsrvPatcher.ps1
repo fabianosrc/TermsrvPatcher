@@ -62,11 +62,11 @@ function Get-OSInfo {
 }
 
 function Get-OSVersion {
-    $OSVersion = [System.Environment]::OSVersion.Version
+    [version]$OSVersion = [System.Environment]::OSVersion.Version
 
     if ($OSVersion.Major -eq 6 -and $OSVersion.Minor -eq 1) {
         return 'Windows 7'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000) {
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000 -and $OSVersion.Build -ne 20348) {
         return 'Windows 10'
     } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -gt 22000) {
         return 'Windows 11'
@@ -280,7 +280,6 @@ switch (Get-OSVersion) {
         }
     }
     'Windows Server 2022' {
-
     }
     'Unsupported OS' {
         Write-Host 'Unable to get OS Version'
