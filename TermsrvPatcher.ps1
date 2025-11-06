@@ -76,6 +76,8 @@ function Get-OSVersion {
         return 'Windows Server 2016'
     } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 20348) {
         return 'Windows Server 2022'
+    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 26100) {
+        return 'Windows Server 2025'
     } else {
         return 'Unsupported OS'
     }
@@ -278,6 +280,9 @@ switch (Get-OSVersion) {
         Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Windows Server 2022' {
+        Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
+    }
+    'Windows Server 2025' {
         Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Unsupported OS' {
