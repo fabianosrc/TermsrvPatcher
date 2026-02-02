@@ -270,12 +270,12 @@ switch (Get-OSVersion) {
         Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Windows 11' {
-        if (((Get-OSInfo).DisplayVersion -eq '23H2') -or (Get-OSInfo).DisplayVersion -eq '22H2') {
+        if ((Get-OSInfo).DisplayVersion -eq '23H2' -or (Get-OSInfo).DisplayVersion -eq '22H2') {
             Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
         } elseif ((Get-OSInfo).DisplayVersion -eq '24H2' -or (Get-OSInfo).DisplayVersion -eq '25H2') {
             Update-Dll @commonParams -InputPattern $patterns.Win24H2 -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
         } else {
-          Write-Host 'Win11 OS Info value [$(Get-OSInfo).DisplayVersion] was not a supported value'
+          Write-Host "Win11 OS Info value [$((Get-OSInfo).DisplayVersion)] was not a supported value"
         }
     }
     'Windows Server 2016' {
