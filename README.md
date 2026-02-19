@@ -46,7 +46,15 @@ cd c:\Users\YourUserName\Downloads
 
 Or... Right click on TermsrvPacther.ps1, select 'Run with PowerShell' and enjoy :-)
 
-#### Supported Terminal Services versions:
+## Automate on Boot
+To run the script automatically after updates, import the task into Windows Task Scheduler:
+
+1. **Open Task Scheduler**: Run `taskschd.msc`.
+2. **Import**: Select _Action_ > _Import Task..._ and choose [TermsrvPatcherScheduledTask.xml](TermsrvPatcherScheduledTask.xml).
+3. **Configure Path**: The default path is `C:\TermsrvPatcher.ps1`. If your script is elsewhere, go to _Actions_ > _Edit_ and update the script path in the _Arguments_ input.
+
+
+# Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
  - Windows 10 and Windows 11 23H2/24H2
  - Windows Server 2016
