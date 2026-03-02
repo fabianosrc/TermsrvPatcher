@@ -66,18 +66,26 @@ function Get-OSVersion {
     [version]$OSVersion = [System.Environment]::OSVersion.Version
     $installationType = (Get-OSInfo).InstallationType
 
-    if ($OSVersion.Major -eq 6 -and $OSVersion.Minor -eq 1) {
-        return 'Windows 7'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000 -and $installationType -eq 'Client') {
-        return 'Windows 10'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -gt 22000) {
-        return 'Windows 11'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000 -and $installationType -eq 'Server') {
-        return 'Windows Server 2016'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 20348) {
-        return 'Windows Server 2022'
-    } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 26100) {
-        return 'Windows Server 2025'
+    if ($installationType -eq 'Client') {
+        if ($OSVersion.Major -eq 6 -and $OSVersion.Minor -eq 1) {
+            return 'Windows 7'
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000) {
+            return 'Windows 10'
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -gt 22000) {
+            return 'Windows 11'
+        } else {
+            return 'Unsupported OS'
+        }
+    } elseif ($installationType -eq 'Server') {
+        if ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000) {
+            return 'Windows Server 2016'
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 20348) {
+            return 'Windows Server 2022'
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 26100) {
+            return 'Windows Server 2025'
+        } else {
+            return 'Unsupported OS'
+        }
     } else {
         return 'Unsupported OS'
     }
