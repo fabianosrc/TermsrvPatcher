@@ -2,7 +2,7 @@
 
 <#PSScriptInfo
 
-.VERSION 1.0
+.VERSION 1.1
 
 .GUID 41543292-9400-41d5-8bb8-5fe43f167a03
 
@@ -71,17 +71,20 @@ function Get-OSVersion {
             return 'Windows 7'
         } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000) {
             return 'Windows 10'
-        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -gt 22000) {
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -ge 22000) {
             return 'Windows 11'
         } else {
             return 'Unsupported OS'
         }
     } elseif ($installationType -eq 'Server') {
-        if ($OSVersion.Major -eq 10 -and $OSVersion.Build -lt 22000) {
+        # Use explicit build numbers instead of ranges — Server 2022 (20348) is < 22000,
+        # so a -lt 22000 range check would incorrectly match it as Server 2016.
+        if ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 14393) {
             return 'Windows Server 2016'
-        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 20348) {
+        } elseif ($OSVersion.Major -eq 10 -and ($OSVersion.Build -eq 20348 -or $OSVersion.Build -eq 25398)) {
+            # 20348 = Server 2022; 25398 = Server 2022 Datacenter Azure Edition (HCI)
             return 'Windows Server 2022'
-        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 26100) {
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -ge 26100) {
             return 'Windows Server 2025'
         } else {
             return 'Unsupported OS'
@@ -89,6 +92,43 @@ function Get-OSVersion {
     } else {
         return 'Unsupported OS'
     }
+}
+
+# Retry Copy-Item up to 30 times with a 2-second delay to handle the window where dependent
+# services have stopped but still hold a file lock on termsrv.dll.
+function Copy-DllWithRetry {
+    param(
+        [string]$Source,
+        [string]$Destination
+    )
+    for ($i = 1; $i -le 30; $i++) {
+        try {
+            Copy-Item -Path $Source -Destination $Destination -Force -ErrorAction Stop
+            return $true
+        } catch {
+            Write-Host "Waiting for DLL lock to release (attempt $i/30)..." -ForegroundColor Yellow
+            Start-Sleep -Milliseconds 2000
+        }
+    }
+    return $false
+}
+
+function Stop-TermService {
+    # Stop dependent services first; they can hold termsrv.dll open even after TermService stops.
+    Stop-Service -Name UmRdpService, SessionEnv -Force -ErrorAction SilentlyContinue
+
+    try {
+        Stop-Service -Name TermService -Force -ErrorAction Stop
+    } catch {
+        Write-Warning -Message $_.Exception.Message
+        exit 1  # exit the script, not just this function
+    }
+
+    while ((Get-Service -Name TermService).Status -ne 'Stopped') {
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Host "`nThe Remote Desktop Services (TermService) has been stopped successfully`n" -ForegroundColor Green
 }
 
 function Update-Dll {
@@ -115,14 +155,17 @@ function Update-Dll {
 
     begin {
         $match = $TermsrvDllAsText -match $InputPattern
-        $patch = $TermsrvDllAsText -match $Replacement
+        # Use .Contains() for a literal string check — $Replacement is not a regex pattern.
+        $patch = $TermsrvDllAsText.Contains($Replacement)
     }
 
     process {
         if ($match) {
             Write-Host "`nPattern matching!`n" -ForegroundColor Green
 
-            $dllAsTextReplaced = $TermsrvDllAsText -replace $InputPattern, $Replacement
+            # Replace only the first occurrence to avoid corrupting the DLL if the
+            # byte sequence appears more than once.
+            $dllAsTextReplaced = $InputPattern.Replace($TermsrvDllAsText, $Replacement, 1)
 
             # Use the replaced string to create a byte array again.
             [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
@@ -151,8 +194,12 @@ function Update-Dll {
 
             Start-Sleep -Milliseconds 1500
 
-            # Overwrite original DLL with patched version:
-            Copy-Item -Path $TermsrvDllAsPatch -Destination $TermsrvDllAsFile -Force
+            if (-not (Copy-DllWithRetry -Source $TermsrvDllAsPatch -Destination $TermsrvDllAsFile)) {
+                Write-Warning 'Could not replace termsrv.dll after 30 attempts. Try rebooting and running the script again.'
+                Set-Acl -Path $TermsrvDllAsFile -AclObject $TermsrvAclObject
+                Start-Service TermService -PassThru
+                exit 1
+            }
         } elseif ($patch) {
             Write-Host "The file is already patched. No changes are needed.`n" -ForegroundColor Green
         } else {
@@ -167,21 +214,6 @@ function Update-Dll {
     }
 }
 
-function Stop-TermService {
-    try {
-        Stop-Service -Name TermService -Force -ErrorAction Stop
-    } catch {
-        Write-Warning -Message $_.Exception.Message
-        return
-    }
-
-    while ((Get-Service -Name TermService).Status -ne 'Stopped') {
-        Start-Sleep -Milliseconds 500
-    }
-
-    Write-Host "`nThe Remote Desktop Services (TermService) has been stopped sucsessfully`n" -ForegroundColor Green
-}
-
 Stop-TermService
 
 # Save Access Control List (ACL) of termsrv.dll file.
@@ -189,17 +221,35 @@ $termsrvDllAcl = Get-Acl -Path $termsrvDllFile
 
 Write-Host "Owner of termsrv.dll: $($termsrvDllAcl.Owner)"
 
-# Create a backup of the original termsrv.dll file.
-Copy-Item -Path $termsrvDllFile -Destination $termsrvDllCopy -Force
+# Only create a backup when one does not already exist. Always overwriting risks replacing a
+# clean original backup with a patched copy on subsequent runs.
+if (-not (Test-Path $termsrvDllCopy)) {
+    Copy-Item -Path $termsrvDllFile -Destination $termsrvDllCopy -Force
+    Write-Host "Backup created at $termsrvDllCopy" -ForegroundColor Cyan
+} else {
+    Write-Host "Backup already exists at $termsrvDllCopy, skipping." -ForegroundColor Cyan
+}
 
 # Take ownership of the DLL...
 takeown.exe /F $termsrvDllFile
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "takeown failed (exit code $LASTEXITCODE). Cannot proceed."
+    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+    Start-Service TermService -PassThru
+    exit 1
+}
 
 # Get Current logged in user (changed by .NET class, because in remote connection WMI Object cannot retrieve the user)
 $currentUserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 # Grant full control to the currently logged in user.
 icacls.exe $termsrvDllFile /grant "$($currentUserName):F"
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "icacls failed (exit code $LASTEXITCODE). Cannot proceed."
+    Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+    Start-Service TermService -PassThru
+    exit 1
+}
 
 # Read termsrv.dll as byte array to modify bytes
 $dllAsByte = [System.IO.File]::ReadAllBytes($termsrvDllFile)
@@ -217,54 +267,65 @@ $commonParams = @{
 switch (Get-OSVersion) {
     'Windows 7' {
         if ($OSArchitecture -eq '64-bit') {
-            switch ((Get-OSInfo).FullOSBuild) {
-                '7601.23964' {
-                    $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
-                    -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                    -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+            $win7Replacement = 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90'
+
+            if ($dllAsText.Contains($win7Replacement)) {
+                Write-Host "The file is already patched. No changes are needed.`n" -ForegroundColor Green
+            } else {
+                switch ((Get-OSInfo).FullOSBuild) {
+                    '7601.23964' {
+                        $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', $win7Replacement `
+                        -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                        -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                    }
+                    '7601.24546' {
+                        $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', $win7Replacement `
+                        -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                        -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                    }
+                    Default {
+                        $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', $win7Replacement `
+                        -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
+                        -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                    }
                 }
-                '7601.24546' {
-                    $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
-                    -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                    -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
-                }
-                Default {
-                    $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', 'B8 00 01 00 00 90 89 87 38 06 00 00 90 90 90 90 90 90' `
-                    -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                    -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+
+                if ($dllAsTextReplaced -eq $dllAsText) {
+                    Write-Host "The pattern was not found. Nothing will be changed.`n" -ForegroundColor Yellow
+                } else {
+                    # Use the replaced string to create a byte array again.
+                    [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
+
+                    # Create termsrv.dll.patched from the byte array.
+                    [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
+
+                    fc.exe /B $termsrvPatched $termsrvDllFile
+                    <#
+                    .DESCRIPTION
+                        Compares termsrv.dll with termsrv.dll.patched and displays the differences between them.
+                    .NOTES
+                        Expected output something like:
+
+                        00098BA2: B8 8B
+                        00098BA3: 00 99
+                        00098BA4: 01 30
+                        00098BA5: 00 03
+                        00098BA7: 89 00
+                        00098BA8: 81 8B
+                        00098BA9: 38 B1
+                        00098BAA: 06 34
+                        00098BAB: 00 03
+                        00098BAD: 90 00
+                    #>
+
+                    Start-Sleep -Milliseconds 1500
+
+                    if (-not (Copy-DllWithRetry -Source $termsrvPatched -Destination $termsrvDllFile)) {
+                        Write-Warning 'Could not replace termsrv.dll after 30 attempts. Try rebooting and running the script again.'
+                    }
                 }
             }
         }
-
-        # Use the replaced string to create a byte array again.
-        [byte[]] $dllAsBytesReplaced = -split $dllAsTextReplaced -replace '^', '0x'
-
-        # Create termsrv.dll.patched from the byte array.
-        [System.IO.File]::WriteAllBytes($termsrvPatched, $dllAsBytesReplaced)
-
-        fc.exe /B $termsrvPatched $termsrvDllFile
-        <#
-        .DESCRIPTION
-            Compares termsrv.dll with tersrv.dll.patched and displays the differences between them.
-        .NOTES
-            Expected output something like:
-
-            00098BA2: B8 8B
-            00098BA3: 00 99
-            00098BA4: 01 30
-            00098BA5: 00 03
-            00098BA7: 89 00
-            00098BA8: 81 8B
-            00098BA9: 38 B1
-            00098BAA: 06 34
-            00098BAB: 00 03
-            00098BAD: 90 00
-        #>
-
-        Start-Sleep -Milliseconds 1500
-
-        # Overwrite original DLL with patched version:
-        Copy-Item -Path $termsrvPatched -Destination $termsrvDllFile -Force
 
         # Restore original Access Control List (ACL):
         Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
@@ -283,7 +344,9 @@ switch (Get-OSVersion) {
         } elseif ((Get-OSInfo).DisplayVersion -eq '24H2' -or (Get-OSInfo).DisplayVersion -eq '25H2') {
             Update-Dll @commonParams -InputPattern $patterns.Win24H2 -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
         } else {
-          Write-Host "Win11 OS Info value [$((Get-OSInfo).DisplayVersion)] was not a supported value"
+            Write-Host "Win11 OS Info value [$((Get-OSInfo).DisplayVersion)] was not a supported value" -ForegroundColor Yellow
+            Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+            Start-Service TermService -PassThru
         }
     }
     'Windows Server 2016' {
@@ -296,6 +359,8 @@ switch (Get-OSVersion) {
         Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Unsupported OS' {
-        Write-Host 'Unable to get OS Version'
+        Write-Host 'Unable to get OS Version' -ForegroundColor Red
+        Set-Acl -Path $termsrvDllFile -AclObject $termsrvDllAcl
+        Start-Service TermService -PassThru
     }
 }

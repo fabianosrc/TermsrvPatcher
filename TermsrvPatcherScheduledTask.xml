@@ -12,7 +12,7 @@
   <Principals>
     <Principal id="Author">
       <UserId>SYSTEM</UserId>
-      <RunLevel>LeastPrivilege</RunLevel>
+      <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
   <Settings>
@@ -39,7 +39,7 @@
   <Actions Context="Author">
     <Exec>
       <Command>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Command>
-      <Arguments>C:\TermsrvPatcher.ps1</Arguments>
+      <Arguments>-NoProfile -ExecutionPolicy Bypass -File "C:\TermsrvPatcher.ps1"</Arguments>
     </Exec>
   </Actions>
 </Task>
