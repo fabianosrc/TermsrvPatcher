@@ -81,6 +81,8 @@ function Get-OSVersion {
         # so a -lt 22000 range check would incorrectly match it as Server 2016.
         if ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 14393) {
             return 'Windows Server 2016'
+        } elseif ($OSVersion.Major -eq 10 -and $OSVersion.Build -eq 17763) {
+            return 'Windows Server 2019'
         } elseif ($OSVersion.Major -eq 10 -and ($OSVersion.Build -eq 20348 -or $OSVersion.Build -eq 25398)) {
             # 20348 = Server 2022; 25398 = Server 2022 Datacenter Azure Edition (HCI)
             return 'Windows Server 2022'
@@ -272,21 +274,28 @@ switch (Get-OSVersion) {
             if ($dllAsText.Contains($win7Replacement)) {
                 Write-Host "The file is already patched. No changes are needed.`n" -ForegroundColor Green
             } else {
+                $win7P2 = [regex]'4C 24 60 BB 01 00 00 00'
+                $win7P3_18 = [regex]'83 7C 24 50 00 74 18 48 8D'
+                $win7P3_43 = [regex]'83 7C 24 50 00 74 43 48 8D'
+
                 switch ((Get-OSInfo).FullOSBuild) {
                     '7601.23964' {
-                        $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00', $win7Replacement `
-                        -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                        -replace '83 7C 24 50 00 74 18 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                        $p1 = [regex]'8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 2F C3 00 00'
+                        $dllAsTextReplaced = $p1.Replace($dllAsText, $win7Replacement, 1)
+                        $dllAsTextReplaced = $win7P2.Replace($dllAsTextReplaced, '4C 24 60 BB 00 00 00 00', 1)
+                        $dllAsTextReplaced = $win7P3_18.Replace($dllAsTextReplaced, '83 7C 24 50 00 EB 18 48 8D', 1)
                     }
                     '7601.24546' {
-                        $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', $win7Replacement `
-                        -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                        -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                        $p1 = [regex]'8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00'
+                        $dllAsTextReplaced = $p1.Replace($dllAsText, $win7Replacement, 1)
+                        $dllAsTextReplaced = $win7P2.Replace($dllAsTextReplaced, '4C 24 60 BB 00 00 00 00', 1)
+                        $dllAsTextReplaced = $win7P3_43.Replace($dllAsTextReplaced, '83 7C 24 50 00 EB 18 48 8D', 1)
                     }
                     Default {
-                        $dllAsTextReplaced = $dllAsText -replace '8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00', $win7Replacement `
-                        -replace '4C 24 60 BB 01 00 00 00', '4C 24 60 BB 00 00 00 00' `
-                        -replace '83 7C 24 50 00 74 43 48 8D', '83 7C 24 50 00 EB 18 48 8D'
+                        $p1 = [regex]'8B 87 38 06 00 00 39 87 3C 06 00 00 0F 84 3E C4 00 00'
+                        $dllAsTextReplaced = $p1.Replace($dllAsText, $win7Replacement, 1)
+                        $dllAsTextReplaced = $win7P2.Replace($dllAsTextReplaced, '4C 24 60 BB 00 00 00 00', 1)
+                        $dllAsTextReplaced = $win7P3_43.Replace($dllAsTextReplaced, '83 7C 24 50 00 EB 18 48 8D', 1)
                     }
                 }
 
@@ -350,6 +359,9 @@ switch (Get-OSVersion) {
         }
     }
     'Windows Server 2016' {
+        Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
+    }
+    'Windows Server 2019' {
         Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
     }
     'Windows Server 2022' {

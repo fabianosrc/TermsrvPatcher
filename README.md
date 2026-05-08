@@ -61,5 +61,6 @@ To run the script automatically after updates, import the task into Windows Task
  - Windows 10
  - Windows 11 22H2, 23H2, 24H2, 25H2
  - Windows Server 2016
- - Windows Server 2022
+ - Windows Server 2019
+ - Windows Server 2022 (including Datacenter Azure Edition / HCI, build 25398)
  - Windows Server 2025
