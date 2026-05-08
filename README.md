@@ -53,9 +53,14 @@ To run the script automatically after updates, import the task into Windows Task
 2. **Import**: Select _Action_ > _Import Task..._ and choose [TermsrvPatcherScheduledTask.xml](TermsrvPatcherScheduledTask.xml).
 3. **Configure Path**: The default path is `C:\TermsrvPatcher.ps1`. If your script is elsewhere, go to _Actions_ > _Edit_ and update the script path in the _Arguments_ input.
 
+> **Security notice:** The scheduled task runs as SYSTEM with `HighestAvailable` privileges and passes `-ExecutionPolicy Bypass` to PowerShell. These settings are required because the task must modify a protected system file (`termsrv.dll`) without a UAC prompt at boot. The practical consequence is that **whoever controls the script file controls what runs as SYSTEM** — ensure `TermsrvPatcher.ps1` is stored in a location writable only by Administrators (e.g. `C:\` or `C:\Program Files`), not in a user-writable folder such as `Downloads` or `AppData`. Do not use this scheduled task on shared or multi-tenant systems where non-administrator users could replace the script.
+
 
 # Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
- - Windows 10 and Windows 11 23H2/24H2
+ - Windows 10
+ - Windows 11 22H2, 23H2, 24H2, 25H2
  - Windows Server 2016
- - Windows Server 2022
+ - Windows Server 2019
+ - Windows Server 2022 (including Datacenter Azure Edition / HCI, build 25398)
+ - Windows Server 2025
