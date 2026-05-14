@@ -1,6 +1,26 @@
 # TermsrvPatcher
 ![Environment](https://img.shields.io/badge/Windows-7,%2010,%2011-brightgreen.svg)
-![license](https://img.shields.io/github/license/fabianomsrc/TermsrvPatcher)
+![License](https://img.shields.io/github/license/fabianomsrc/TermsrvPatcher)
+[![Hits](https://hits.sh/github.com/fabianomsrc/TermsrvPatcher.svg)](https://github.com/fabianosrc/RDPControl)
+
+---
+
+> A new, more complete solution is available: **[RDPControl](https://github.com/fabianosrc/RDPControl)**
+>
+> RDPControl is a full PowerShell module that covers everything TermsrvPatcher did — and much more:
+>
+> - ✅ Multi-session configuration with `-DryRun` preview
+> - ✅ Automatic snapshot and restore
+> - ✅ Self-healing watchdog (survives Windows Updates automatically)
+> - ✅ Port management and firewall rules
+> - ✅ User access control
+> - ✅ Session management
+> - ✅ Full audit trail
+> - ✅ PowerShell Gallery ready
+>
+> 👉 **[Migrate to RDPControl](https://github.com/fabianosrc/RDPControl)**
+
+---
 
 # Windows 11 25H2 support added!
 
@@ -19,32 +39,17 @@ Requires PowerShell 5.1 or higher
 
 [Download and install Windows PowerShell 5.1](https://www.microsoft.com/en-us/download/details.aspx?id=54616)
 
-# How to use
-Download TermsrvPatcher.ps1 file and place it in any folder e.g.
+---
 
-```txt
-C:\Users\YourUserName\Downloads
-```
+### How to use
 
-Go to the folder your script is in
+Download `TermsrvPatcher.ps1` and place it in any folder, then run:
 
-> PowerShell Cmdlet
-
-```powershell
-Set-Location -Path C:\Users\YourUserName\Downloads
-```
-> CMD syntax
-
-```cmd
-cd c:\Users\YourUserName\Downloads
-```
-
-> Run the script
 ```powershell
 .\TermsrvPatcher.ps1
 ```
 
-Or... Right click on TermsrvPacther.ps1, select 'Run with PowerShell' and enjoy :-)
+---
 
 ## Automate on Boot
 To run the script automatically after updates, import the task into Windows Task Scheduler:
@@ -64,3 +69,9 @@ To run the script automatically after updates, import the task into Windows Task
  - Windows Server 2019
  - Windows Server 2022 (including Datacenter Azure Edition / HCI, build 25398)
  - Windows Server 2025
+
+---
+
+### See also
+
+👉 **[RDPControl](https://github.com/fabianosrc/RDPControl)** — the recommended replacement for this project.
