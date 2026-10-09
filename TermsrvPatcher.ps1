@@ -353,7 +353,7 @@ switch (Get-OSVersion) {
             Update-Dll @commonParams -InputPattern $patterns.Pattern -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90'
         } elseif (((Get-OSInfo).DisplayVersion -eq '24H2' -or (Get-OSInfo).DisplayVersion -eq '25H2') -and (Get-OSInfo).CurrentBuild -lt '26000') {
             Update-Dll @commonParams -InputPattern $patterns.Win24H2 -Replacement 'B8 00 01 00 00 89 81 38 06 00 00 90 EB'
-        } elseif ((Get-OSInfo).DisplayVersion -eq '25H2' -and (Get-OSInfo).CurrentBuild -ge '26000') {
+        } elseif (((Get-OSInfo).DisplayVersion -eq '25H2' -or (Get-OSInfo).DisplayVersion -eq '26H2') -and (Get-OSInfo).CurrentBuild -ge '26000') {
             Update-Dll @commonParams -InputPattern $patterns.Win25H2 -Replacement '41 B9 00 01 00 00 90 44 89 8F 38 06 00 00 90 90 90 EB 14'
         } else {
             Write-Host "Win11 OS Info value [$((Get-OSInfo).DisplayVersion)] was not a supported value" -ForegroundColor Yellow

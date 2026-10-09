@@ -22,7 +22,7 @@
 
 ---
 
-# Windows 11 25H2 support added!
+# Windows 11 26H2 support added!
 
 Patch termsrv.dll so that multiple remote users can open an RDP session on a non-Windows Server computer
 
@@ -64,7 +64,7 @@ To run the script automatically after updates, import the task into Windows Task
 # Supported Terminal Services versions:
  - Windows 7 Pro SP1 64-bit
  - Windows 10
- - Windows 11 22H2, 23H2, 24H2, 25H2
+ - Windows 11 22H2, 23H2, 24H2, 25H2, 26H2
  - Windows Server 2016
  - Windows Server 2019
  - Windows Server 2022 (including Datacenter Azure Edition / HCI, build 25398)
